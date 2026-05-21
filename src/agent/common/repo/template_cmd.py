@@ -43,23 +43,8 @@ class WorldTemplateCommands:
         )
         self.session.add(data)
 
-
-
-class WorldTemplateQueries:
-    def __init__(self, session: Session):
-        self.session = session
-
-    def combined_search(self, runtime_id: str, query: str):
+    def runtime_data(self):
         pass
 
-    def _bm25(self, runtime_id: str, query: str):
-        # 全文检索
-        pass
-
-    def _relation(self, runtime_id: str, query: str):
-        # 相似文本模糊检索
-        pass
-
-    def _vector(self, runtime_id: str, query: str):
-        # 向量检索
+    def pair_data(self):
         pass

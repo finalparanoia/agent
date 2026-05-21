@@ -1,6 +1,5 @@
-from agent.common.schemas.database import init_db, get_test_session, World
-from agent.common.schemas.dto import WorldDefinitionDTO, ReactionDefinitionDTO, CharacterDefinitionDTO
-from agent.common.application.template_cmd import WorldTemplateCommands
+from agent.common.schemas.database import init_db, get_test_session
+from agent.common.repo.template_cmd import WorldTemplateCommands
 
 init_db()
 s = next(get_test_session())

@@ -1,7 +1,6 @@
 from typing import Optional, List, Dict, Any
 
-from sqlalchemy import func, or_
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func, or_, col
 
 from agent.common.schemas.database import (
     World, WorldDefinition, ReactionDefinition, CharacterDefinition,
@@ -104,7 +103,7 @@ class WorldTemplateQueries:
             return items
         stmt = (
             select(WorldDefinition)
-            .where(WorldDefinition.id.in_([d.id for d in items]))
+            .where(col(WorldDefinition.id).in_([d.id for d in items]))
             .where(func.to_tsvector("simple", WorldDefinition.value).op("@@")(ts_query))
         )
         return list(self.session.exec(stmt).all())
@@ -123,7 +122,7 @@ class WorldTemplateQueries:
         )
         stmt = (
             select(ReactionDefinition)
-            .where(ReactionDefinition.id.in_([r.id for r in items]))
+            .where(col(ReactionDefinition.id).in_([r.id for r in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
         return list(self.session.exec(stmt).all())
@@ -158,7 +157,7 @@ class WorldTemplateQueries:
         )
         stmt = (
             select(RawRequestRespondPair)
-            .where(RawRequestRespondPair.id.in_([h.id for h in items]))
+            .where(col(RawRequestRespondPair.id).in_([h.id for h in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
         return list(self.session.exec(stmt).all())
@@ -198,7 +197,7 @@ class WorldTemplateQueries:
         stmt = (
             select(WorldDefinition)
             .where(WorldDefinition.id.in_([d.id for d in items]))
-            .where(WorldDefinition.value.ilike(pattern))
+            .where(col(WorldDefinition.value).ilike(pattern))
         )
         return list(self.session.exec(stmt).all())
 
@@ -212,10 +211,10 @@ class WorldTemplateQueries:
             .where(ReactionDefinition.id.in_([r.id for r in items]))
             .where(
                 or_(
-                    ReactionDefinition.name.ilike(pattern),
-                    ReactionDefinition.description.ilike(pattern),
-                    ReactionDefinition.user_reaction.ilike(pattern),
-                    ReactionDefinition.target_reaction.ilike(pattern),
+                    col(ReactionDefinition.name).ilike(pattern),
+                    col(ReactionDefinition.description).ilike(pattern),
+                    col(ReactionDefinition.user_reaction).ilike(pattern),
+                    col(ReactionDefinition.target_reaction).ilike(pattern),
                 )
             )
         )
@@ -245,12 +244,12 @@ class WorldTemplateQueries:
             return items
         stmt = (
             select(RawRequestRespondPair)
-            .where(RawRequestRespondPair.id.in_([h.id for h in items]))
+            .where(col(RawRequestRespondPair.id).in_([h.id for h in items]))
             .where(
                 or_(
-                    RawRequestRespondPair.request.ilike(pattern),
-                    RawRequestRespondPair.respond.ilike(pattern),
-                    RawRequestRespondPair.event_brief.ilike(pattern),
+                    col(RawRequestRespondPair.request).ilike(pattern),
+                    col(RawRequestRespondPair.respond).ilike(pattern),
+                    col(RawRequestRespondPair.event_brief).ilike(pattern),
                 )
             )
         )
