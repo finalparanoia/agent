@@ -28,6 +28,20 @@ class CharacterDefinitionDTO(BaseModel):
     description: str
 
 
+class RuntimeDataDTO(BaseModel):
+    id: Optional[str] = None
+    world_id: str
+    label: str
+
+
+class RawRequestRespondPairDTO(BaseModel):
+    id: Optional[int] = -1
+    runtime_id: str
+    request: str
+    respond: str
+    event_brief: str = Field(default="")
+
+
 class SearchResult(BaseModel):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 

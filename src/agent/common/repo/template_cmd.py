@@ -1,7 +1,13 @@
 from sqlmodel import Session, select
 
-from agent.common.schemas.database import World, WorldDefinition, ReactionDefinition, CharacterDefinition
-from agent.common.schemas.dto import WorldDefinitionDTO, ReactionDefinitionDTO, CharacterDefinitionDTO
+from agent.common.schemas.database import (
+    World, WorldDefinition, ReactionDefinition, CharacterDefinition,
+    RuntimeData, RawRequestRespondPair
+)
+from agent.common.schemas.dto import (
+    WorldDefinitionDTO, ReactionDefinitionDTO, CharacterDefinitionDTO,
+    RuntimeDataDTO, RawRequestRespondPairDTO
+)
 
 
 class WorldTemplateCommands:
@@ -43,8 +49,19 @@ class WorldTemplateCommands:
         )
         self.session.add(data)
 
-    def runtime_data(self):
-        pass
+    def runtime_data(self, payload: RuntimeDataDTO):
+        data = RuntimeData(
+            world_id=payload.world_id,
+            label=payload.label,
+        )
+        self.session.add(data)
+        return data.id
 
-    def pair_data(self):
-        pass
+    def pair_data(self, payload: RawRequestRespondPairDTO):
+        data = RawRequestRespondPair(
+            runtime_id=payload.runtime_id,
+            request=payload.request,
+            respond=payload.respond,
+            event_brief=payload.event_brief,
+        )
+        self.session.add(data)
