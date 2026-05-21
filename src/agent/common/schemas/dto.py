@@ -51,3 +51,26 @@ class SearchResult(BaseModel):
     characters: List[CharacterDefinition] = Field(default_factory=list)
     runtime_data: Optional[RuntimeData] = None
     runtime_history: List[RawRequestRespondPair] = Field(default_factory=list)
+
+
+class WorldBookDefinition(BaseModel):
+    value: str
+
+
+class WorldBookReaction(BaseModel):
+    name: str
+    description: str = Field(default="")
+    user_reaction: str = Field(default="")
+    target_reaction: str = Field(default="")
+
+
+class WorldBookCharacter(BaseModel):
+    name: str
+    description: str
+
+
+class WorldBook(BaseModel):
+    name: str
+    definitions: List[WorldBookDefinition] = Field(default_factory=list)
+    reactions: List[WorldBookReaction] = Field(default_factory=list)
+    characters: List[WorldBookCharacter] = Field(default_factory=list)

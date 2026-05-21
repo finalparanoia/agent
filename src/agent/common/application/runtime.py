@@ -1,13 +1,12 @@
 from typing import Optional
 
-from loguru import logger
 from litellm import completion
 from sqlmodel import Session, select
 
 from agent.common.config import SETTINGS
 from agent.common.repo.template_cmd import WorldTemplateCommands
 from agent.common.repo.template_query import WorldTemplateQueries
-from agent.common.schemas.database import World, RuntimeData
+from agent.common.schemas.database import World
 from agent.common.schemas.dto import RuntimeDataDTO, RawRequestRespondPairDTO
 
 
