@@ -10,52 +10,9 @@ from agent.common.schemas.dto import (
     WorldBook
 )
 from agent.common.application.runtime import RuntimeManagement
+from agent.define.pos import WORLD_BOOK_DATA, ROUND
 
 console = Console()
-
-WORLD_BOOK_DATA = {
-    "name": "赛博朋克都市-新上海",
-    "definitions": [
-        {"value": "新上海是一座建于2087年的超级都市，由三层立体结构组成：地面层（旧城）、中层（商业区）、顶层（精英居住区）"},
-        {"value": "城市由AI议会统治，人类与仿生人共存，仿生人拥有有限公民权"},
-        {"value": "城市中流通的货币为信用点，黑市则使用加密代币'幽灵币'"},
-        {"value": "网络空间'深网'与现实世界通过神经接口连接，黑客被称为'潜行者'"},
-    ],
-    "reactions": [
-        {
-            "name": "黑市交易",
-            "description": "在地下黑市进行非法物品或信息的交易",
-            "user_reaction": "尝试在黑市寻找稀有物品",
-            "target_reaction": "黑市商人审视来者，低声报出价格",
-        },
-        {
-            "name": "神经骇入",
-            "description": "通过神经接口入侵目标系统或他人意识",
-            "user_reaction": "启动骇入程序，潜入目标网络",
-            "target_reaction": "防火墙发出警报，数据流中出现异常波动",
-        },
-        {
-            "name": "区域冲突",
-            "description": "不同势力在城区边界发生的武装对峙或交火",
-            "user_reaction": "卷入冲突，选择阵营或试图调停",
-            "target_reaction": "枪声在巷道中回响，霓虹灯碎片如雨落下",
-        },
-    ],
-    "characters": [
-        {
-            "name": "零",
-            "description": "神秘的潜行者，擅长神经骇入，左臂装有军用级义体接口，总是穿着一件褪色的长风衣",
-        },
-        {
-            "name": "薇薇安",
-            "description": "黑市情报贩子，表面经营一家复古唱片店，实际掌握着新上海最大的地下信息网络",
-        },
-        {
-            "name": "K-7",
-            "description": "仿生人侦探，AI议会直属调查员，拥有最高权限的执法模块，但对人类情感充满好奇",
-        },
-    ],
-}
 
 
 def seed_world(cmd: WorldTemplateCommands, book_data: dict) -> str:
@@ -99,10 +56,7 @@ def run_roleplay(session, world_id: str):
 
     console.rule("[bold cyan]Step 3: AI RolePlay")
 
-    rounds = [
-        "我走进了薇薇安的唱片店，推开门时铃铛叮当作响。我低声说：'我需要关于K-7的情报。'",
-        "我决定尝试骇入城市监控网络，追踪K-7的位置。我启动了神经接口，意识开始沉入深网。",
-    ]
+    rounds = ROUND
 
     for i, user_input in enumerate(rounds, 1):
         console.print()

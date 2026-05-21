@@ -61,9 +61,10 @@ class RuntimeManagement:
         context = "\n".join(context_parts)
 
         system_prompt = (
-            "You are an AI assistant operating within a simulated world. "
+            "你是一个小说创作AI，你将根据下面内容进行故事创作。"
             "Use the following context to answer the user's question accurately.\n\n"
             f"--- World Context ---\n{context}\n--- End of Context ---"
+            "只输出正文"
         )
         logger.debug(system_prompt)
 
