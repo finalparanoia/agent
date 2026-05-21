@@ -1,8 +1,8 @@
 from typing import Optional
 
-from litellm import completion
+from litellm import completion, ModelResponse
 from sqlmodel import Session, select
-
+from loguru import logger
 from agent.common.config import SETTINGS
 from agent.common.repo.template_cmd import WorldTemplateCommands
 from agent.common.repo.template_query import WorldTemplateQueries
@@ -29,6 +29,7 @@ class RuntimeManagement:
             label=world.name,
         )
         self._runtime_id = self._cmd.runtime_data(payload)
+        assert self._runtime_id is not None
         return self._runtime_id
 
     def chat(self, request: str) -> str:
@@ -64,6 +65,7 @@ class RuntimeManagement:
             "Use the following context to answer the user's question accurately.\n\n"
             f"--- World Context ---\n{context}\n--- End of Context ---"
         )
+        logger.debug(system_prompt)
 
         response = completion(
             model=SETTINGS.llm_model,
@@ -75,7 +77,12 @@ class RuntimeManagement:
             api_base=SETTINGS.llm_api_base or None,
         )
 
+        if not isinstance(response, ModelResponse):
+            raise RuntimeError("Expected ModelResponse but got streaming response")
+
         respond = response.choices[0].message.content
+        if respond is None:
+            raise RuntimeError("LLM returned empty response")
 
         event_brief = respond[:200] if len(respond) > 200 else respond
 

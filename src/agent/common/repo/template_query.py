@@ -26,7 +26,9 @@ class WorldTemplateQueries:
 
     def _resolve_world_id(self, runtime_id: str) -> Optional[str]:
         stmt = select(RuntimeData.world_id).where(RuntimeData.id == runtime_id)
-        row = self.session.exec(stmt).first()
+
+        # noinspection PyTypeChecker
+        row: str = self.session.exec(stmt).first()
         return row
 
     def _query_static_templates(self, world_id: str) -> Dict[str, Any]:
@@ -106,6 +108,8 @@ class WorldTemplateQueries:
             .where(col(WorldDefinition.id).in_([d.id for d in items]))
             .where(func.to_tsvector("simple", WorldDefinition.value).op("@@")(ts_query))
         )
+
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _bm25_filter_reactions(
@@ -125,6 +129,7 @@ class WorldTemplateQueries:
             .where(col(ReactionDefinition.id).in_([r.id for r in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _bm25_filter_characters(
@@ -142,6 +147,7 @@ class WorldTemplateQueries:
             .where(col(CharacterDefinition.id).in_([c.id for c in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _bm25_filter_history(
@@ -160,6 +166,7 @@ class WorldTemplateQueries:
             .where(col(RawRequestRespondPair.id).in_([h.id for h in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _relation(self, runtime_id: str, query: str) -> SearchResult:
@@ -199,6 +206,7 @@ class WorldTemplateQueries:
             .where(col(WorldDefinition.id).in_([d.id for d in items]))
             .where(col(WorldDefinition.value).ilike(pattern))
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _relation_filter_reactions(
@@ -218,6 +226,7 @@ class WorldTemplateQueries:
                 )
             )
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _relation_filter_characters(
@@ -235,6 +244,7 @@ class WorldTemplateQueries:
                 )
             )
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _relation_filter_history(
@@ -253,12 +263,15 @@ class WorldTemplateQueries:
                 )
             )
         )
+        # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
     def _vector(self, runtime_id: str, query: str) -> SearchResult:
+        _ = self, runtime_id, query
         return SearchResult()
 
-    def _merge_results(self, results: List[SearchResult]) -> SearchResult:
+    @staticmethod
+    def _merge_results(results: List[SearchResult]) -> SearchResult:
         if not results:
             return SearchResult()
 
