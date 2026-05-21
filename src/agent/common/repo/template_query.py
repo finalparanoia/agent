@@ -13,16 +13,28 @@ class WorldTemplateQueries:
     def __init__(self, session: Session):
         self.session = session
 
-    def combined_search(self, runtime_id: str, query: str) -> SearchResult:
+    def combined_search(self, runtime_id: str, raw_query: str | List[str]) -> SearchResult:
+        if isinstance(raw_query, str):
+            queries = [raw_query]
+        else:
+            queries = raw_query
+
         world_id = self._resolve_world_id(runtime_id)
         if not world_id:
             return SearchResult()
 
-        bm25_result = self._bm25(runtime_id, query)
-        relation_result = self._relation(runtime_id, query)
-        vector_result = self._vector(runtime_id, query)
+        static = self._query_static_templates(world_id)
+        runtime = self._query_runtime_data(runtime_id)
 
-        return self._merge_results([bm25_result, relation_result, vector_result])
+        result = []
+
+        for query in queries:
+            bm25_result = self._bm25_with_cache(static, runtime, query)
+            relation_result = self._relation_with_cache(static, runtime, query)
+            vector_result = self._vector(runtime_id, query)
+            result += [bm25_result, relation_result, vector_result]
+
+        return self._merge_results(result)
 
     def _resolve_world_id(self, runtime_id: str) -> Optional[str]:
         stmt = select(RuntimeData.world_id).where(RuntimeData.id == runtime_id)
@@ -79,6 +91,9 @@ class WorldTemplateQueries:
         static = self._query_static_templates(world_id)
         runtime = self._query_runtime_data(runtime_id)
 
+        return self._bm25_with_cache(static, runtime, query)
+
+    def _bm25_with_cache(self, static: Dict[str, Any], runtime: Dict[str, Any], query: str) -> SearchResult:
         ts_query = func.plainto_tsquery("simple", query)
 
         return SearchResult(
@@ -177,6 +192,9 @@ class WorldTemplateQueries:
         static = self._query_static_templates(world_id)
         runtime = self._query_runtime_data(runtime_id)
 
+        return self._relation_with_cache(static, runtime, query)
+
+    def _relation_with_cache(self, static: Dict[str, Any], runtime: Dict[str, Any], query: str) -> SearchResult:
         pattern = f"%{query}%"
 
         return SearchResult(
@@ -294,24 +312,28 @@ class WorldTemplateQueries:
                 runtime_data = r.runtime_data
 
             for wd in r.world_definitions:
-                if wd.id not in seen_def_ids:
+                if wd.id is None or wd.id not in seen_def_ids:
                     merged_definitions.append(wd)
-                    seen_def_ids.add(wd.id)
+                    if wd.id is not None:
+                        seen_def_ids.add(wd.id)
 
             for rx in r.reactions:
-                if rx.id not in seen_reaction_ids:
+                if rx.id is None or rx.id not in seen_reaction_ids:
                     merged_reactions.append(rx)
-                    seen_reaction_ids.add(rx.id)
+                    if rx.id is not None:
+                        seen_reaction_ids.add(rx.id)
 
             for ch in r.characters:
                 if ch.id not in seen_char_ids:
                     merged_characters.append(ch)
-                    seen_char_ids.add(ch.id)
+                    if ch.id is not None:
+                        seen_char_ids.add(ch.id)
 
             for rh in r.runtime_history:
-                if rh.id not in seen_history_ids:
+                if rh.id is None or rh.id not in seen_history_ids:
                     merged_history.append(rh)
-                    seen_history_ids.add(rh.id)
+                    if rh.id is not None:
+                        seen_history_ids.add(rh.id)
 
         return SearchResult(
             world=world,

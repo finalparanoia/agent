@@ -44,6 +44,7 @@ class WorldTemplateCommands:
 
     def character_define(self, payload: CharacterDefinitionDTO):
         data = CharacterDefinition(
+            world_id=payload.world_id,
             name=payload.name,
             description=payload.description,
         )

@@ -24,6 +24,7 @@ class ReactionDefinitionDTO(BaseModel):
 
 class CharacterDefinitionDTO(BaseModel):
     id: Optional[int] = -1
+    world_id: str
     name: str
     description: str
 

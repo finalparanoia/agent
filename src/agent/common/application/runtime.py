@@ -1,4 +1,5 @@
-from typing import Optional
+import json
+from typing import Optional, List
 
 from litellm import completion, ModelResponse
 from sqlmodel import Session, select
@@ -32,11 +33,46 @@ class RuntimeManagement:
         assert self._runtime_id is not None
         return self._runtime_id
 
+    @staticmethod
+    def _extract_keywords(text: str) -> List[str]:
+        keyword_prompt = (
+            "你是一个关键词提取助手。请从用户输入中提取用于检索的关键词，"
+            "返回JSON格式的字符串列表，不要输出任何其他内容。\n"
+            '示例输出：["关键词1", "关键词2", "关键词3"]'
+        )
+        response = completion(
+            model=SETTINGS.llm_model,
+            messages=[
+                {"role": "system", "content": keyword_prompt},
+                {"role": "user", "content": text},
+            ],
+            api_key=SETTINGS.llm_api_key or None,
+            api_base=SETTINGS.llm_api_base or None,
+        )
+        if not isinstance(response, ModelResponse):
+            raise RuntimeError("Expected ModelResponse but got streaming response")
+        content = response.choices[0].message.content
+        if content is None:
+            raise RuntimeError("LLM returned empty response for keyword extraction")
+        try:
+            keywords = json.loads(content.strip())
+            if isinstance(keywords, list) and all(isinstance(k, str) for k in keywords):
+                return keywords
+        except json.JSONDecodeError:
+            pass
+        logger.warning(f"Failed to parse keywords from LLM response: {content}, falling back to raw text")
+        return [text]
+
     def chat(self, request: str) -> str:
         if not self._runtime_id:
             raise RuntimeError("Runtime not initialized, call initialize() first")
 
-        search_result = self._query.combined_search(self._runtime_id, request)
+        keywords = self._extract_keywords(request)
+
+        search_result = self._query.combined_search(self._runtime_id, keywords)
+
+        logger.debug(f"Extracted keywords: {keywords}, search query: {search_result}")
+
 
         context_parts = []
 
@@ -64,6 +100,7 @@ class RuntimeManagement:
             "你是一个小说创作AI，你将根据下面内容进行故事创作。"
             "Use the following context to answer the user's question accurately.\n\n"
             f"--- World Context ---\n{context}\n--- End of Context ---"
+            "严格按照用户输入的内容行文，可以对用户的指令进行任意的细致化描写，但绝对不要进行任何自作主张的情节推动"
             "只输出正文"
         )
         logger.debug(system_prompt)

@@ -39,6 +39,7 @@ def seed_world(cmd: WorldTemplateCommands, book_data: dict) -> str:
 
     for c in book.characters:
         cmd.character_define(CharacterDefinitionDTO(
+            world_id=world_id,
             name=c.name,
             description=c.description,
         ))

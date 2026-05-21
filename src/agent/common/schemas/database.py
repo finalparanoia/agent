@@ -17,6 +17,7 @@ class World(SQLModel, table=True):
 
     definition: List["WorldDefinition"] = Relationship(back_populates="world")
     reaction: List["ReactionDefinition"] = Relationship(back_populates="world")
+    character: List["CharacterDefinition"] = Relationship(back_populates="world")
 
 
 class WorldDefinition(SQLModel, table=True):
@@ -48,6 +49,9 @@ class CharacterDefinition(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(sa_type=Text)
     description: str = Field(sa_type=Text)
+    world_id: str = Field(foreign_key="world.id")
+
+    world: World = Relationship(back_populates="character")
 
 
 class RuntimeData(SQLModel, table=True):
