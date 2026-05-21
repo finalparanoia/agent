@@ -89,18 +89,18 @@ def get_db_session():
                 yield session
 
                 # with 块执行完毕后回到这里
-                logger.trace(f"db session end!")
+                logger.trace("db session end!")
 
                 # 无异常,提交事务
                 session.commit()
-                logger.trace(f"db session commit!")
+                logger.trace("db session commit!")
 
             except Exception as e:      # 发生异常,回滚事务  重新抛出异常
                 logger.exception(e)
                 session.rollback()
                 raise
             finally:        # 无论是否异常 , 都会记录
-                logger.trace(f"db session closed!")
+                logger.trace("db session closed!")
 
     except Exception as e:
         logger.error("无法创建session")

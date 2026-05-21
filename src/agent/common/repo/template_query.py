@@ -139,7 +139,7 @@ class WorldTemplateQueries:
         )
         stmt = (
             select(CharacterDefinition)
-            .where(CharacterDefinition.id.in_([c.id for c in items]))
+            .where(col(CharacterDefinition.id).in_([c.id for c in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
         return list(self.session.exec(stmt).all())
@@ -196,7 +196,7 @@ class WorldTemplateQueries:
             return items
         stmt = (
             select(WorldDefinition)
-            .where(WorldDefinition.id.in_([d.id for d in items]))
+            .where(col(WorldDefinition.id).in_([d.id for d in items]))
             .where(col(WorldDefinition.value).ilike(pattern))
         )
         return list(self.session.exec(stmt).all())
@@ -208,7 +208,7 @@ class WorldTemplateQueries:
             return items
         stmt = (
             select(ReactionDefinition)
-            .where(ReactionDefinition.id.in_([r.id for r in items]))
+            .where(col(ReactionDefinition.id).in_([r.id for r in items]))
             .where(
                 or_(
                     col(ReactionDefinition.name).ilike(pattern),
@@ -227,11 +227,11 @@ class WorldTemplateQueries:
             return items
         stmt = (
             select(CharacterDefinition)
-            .where(CharacterDefinition.id.in_([c.id for c in items]))
+            .where(col(CharacterDefinition.id).in_([c.id for c in items]))
             .where(
                 or_(
-                    CharacterDefinition.name.ilike(pattern),
-                    CharacterDefinition.description.ilike(pattern),
+                    col(CharacterDefinition.name).ilike(pattern),
+                    col(CharacterDefinition.description).ilike(pattern),
                 )
             )
         )
