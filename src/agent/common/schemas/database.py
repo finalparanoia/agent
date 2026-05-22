@@ -48,7 +48,7 @@ class ReactionDefinition(SQLModel, table=True):
 class CharacterDefinition(SQLModel, table=True):
     __tablename__ = "character_definition"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[str] = Field(primary_key=True, default_factory=generate_id)
     name: str = Field(sa_type=Text)
     description: str = Field(sa_type=Text)
     world_id: str = Field(foreign_key="world.id")
@@ -72,7 +72,7 @@ class RuntimeCharacter(SQLModel, table=True):
     __tablename__ = "runtime_character"
 
     id: Optional[str] = Field(primary_key=True, default_factory=generate_id)
-    character_id: str = Field(foreign_key="character.id")
+    character_id: str = Field(foreign_key="character_definition.id")
 
     runtime_data_id: str = Field(foreign_key="runtime_data.id")
     name: str = Field(sa_type=Text)

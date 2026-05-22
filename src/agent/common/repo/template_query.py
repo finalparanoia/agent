@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from sqlmodel import Session, select, func, or_, col
 
 from agent.common.schemas.database import (
-    World, WorldDefinition, ReactionDefinition, CharacterDefinition,
+    World, WorldDefinition, ReactionDefinition, RuntimeCharacter,
     RuntimeData, RawRequestRespondPair
 )
 from agent.common.schemas.dto import SearchResult
@@ -56,15 +56,10 @@ class WorldTemplateQueries:
             select(ReactionDefinition).where(ReactionDefinition.world_id == world_id)
         ).all())
 
-        characters = list(self.session.exec(
-            select(CharacterDefinition)
-        ).all())
-
         return {
             "world": world,
             "world_definitions": world_definitions,
             "reactions": reactions,
-            "characters": characters,
         }
 
     def _query_runtime_data(self, runtime_id: str) -> Dict[str, Any]:
@@ -78,9 +73,16 @@ class WorldTemplateQueries:
             )
         ).all())
 
+        runtime_characters = list(self.session.exec(
+            select(RuntimeCharacter).where(
+                RuntimeCharacter.runtime_data_id == runtime_id
+            )
+        ).all())
+
         return {
             "runtime_data": runtime_data,
             "runtime_history": runtime_history,
+            "runtime_characters": runtime_characters,
         }
 
     def _bm25(self, runtime_id: str, query: str) -> SearchResult:
@@ -105,7 +107,7 @@ class WorldTemplateQueries:
                 static["reactions"], query, ts_query
             ),
             characters=self._bm25_filter_characters(
-                static["characters"], query, ts_query
+                runtime["runtime_characters"], query, ts_query
             ),
             runtime_data=runtime["runtime_data"],
             runtime_history=self._bm25_filter_history(
@@ -148,18 +150,19 @@ class WorldTemplateQueries:
         return list(self.session.exec(stmt).all())
 
     def _bm25_filter_characters(
-        self, items: List[CharacterDefinition], query: str, ts_query
-    ) -> List[CharacterDefinition]:
+        self, items: List[RuntimeCharacter], query: str, ts_query
+    ) -> List[RuntimeCharacter]:
         if not query or not items:
             return items
         combined_vector = func.to_tsvector(
             "simple",
-            func.coalesce(CharacterDefinition.name, "")
-            + " " + func.coalesce(CharacterDefinition.description, ""),
+            func.coalesce(RuntimeCharacter.name, "")
+            + " " + func.coalesce(RuntimeCharacter.description, "")
+            + " " + func.coalesce(RuntimeCharacter.status, ""),
         )
         stmt = (
-            select(CharacterDefinition)
-            .where(col(CharacterDefinition.id).in_([c.id for c in items]))
+            select(RuntimeCharacter)
+            .where(col(RuntimeCharacter.id).in_([c.id for c in items]))
             .where(combined_vector.op("@@")(ts_query))
         )
         # noinspection PyTypeChecker
@@ -206,7 +209,7 @@ class WorldTemplateQueries:
                 static["reactions"], pattern
             ),
             characters=self._relation_filter_characters(
-                static["characters"], pattern
+                runtime["runtime_characters"], pattern
             ),
             runtime_data=runtime["runtime_data"],
             runtime_history=self._relation_filter_history(
@@ -248,17 +251,18 @@ class WorldTemplateQueries:
         return list(self.session.exec(stmt).all())
 
     def _relation_filter_characters(
-        self, items: List[CharacterDefinition], pattern: str
-    ) -> List[CharacterDefinition]:
+        self, items: List[RuntimeCharacter], pattern: str
+    ) -> List[RuntimeCharacter]:
         if not items:
             return items
         stmt = (
-            select(CharacterDefinition)
-            .where(col(CharacterDefinition.id).in_([c.id for c in items]))
+            select(RuntimeCharacter)
+            .where(col(RuntimeCharacter.id).in_([c.id for c in items]))
             .where(
                 or_(
-                    col(CharacterDefinition.name).ilike(pattern),
-                    col(CharacterDefinition.description).ilike(pattern),
+                    col(RuntimeCharacter.name).ilike(pattern),
+                    col(RuntimeCharacter.description).ilike(pattern),
+                    col(RuntimeCharacter.status).ilike(pattern),
                 )
             )
         )
@@ -301,7 +305,7 @@ class WorldTemplateQueries:
         seen_history_ids: set = set()
         merged_definitions: List[WorldDefinition] = []
         merged_reactions: List[ReactionDefinition] = []
-        merged_characters: List[CharacterDefinition] = []
+        merged_characters: List[RuntimeCharacter] = []
         merged_history: List[RawRequestRespondPair] = []
 
         for r in results:

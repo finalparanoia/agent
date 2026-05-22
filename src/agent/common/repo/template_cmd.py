@@ -55,16 +55,18 @@ class WorldTemplateCommands:
             world_id=payload.world_id,
             label=payload.label,
         )
+        self.session.add(data)
+        self.session.flush()
 
         for character_entity in data.world.character:
             character_entity: CharacterDefinition
             character_data = RuntimeCharacter(
                 character_id=character_entity.id,
+                runtime_data_id=data.id,
                 name=character_entity.name,
-                hardcopy_description=character_entity.description
+                description=character_entity.description,
             )
             self.session.add(character_data)
-        self.session.add(data)
         return data.id
 
     def pair_data(self, payload: RawRequestRespondPairDTO):

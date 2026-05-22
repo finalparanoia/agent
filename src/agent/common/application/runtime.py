@@ -7,7 +7,7 @@ from loguru import logger
 from agent.common.config import SETTINGS
 from agent.common.repo.template_cmd import WorldTemplateCommands
 from agent.common.repo.template_query import WorldTemplateQueries
-from agent.common.schemas.database import World, RuntimeCharacter
+from agent.common.schemas.database import World
 from agent.common.schemas.dto import RuntimeDataDTO, RawRequestRespondPairDTO
 
 
@@ -89,7 +89,13 @@ class RuntimeManagement:
             )
 
         for c in search_result.characters:
-            context_parts.append(f"[Character] {c.name}: {c.description}")
+            char_desc = c.description
+            if c.description_patch:
+                char_desc += f" ({c.description_patch})"
+            char_info = f"[Character] {c.name}: {char_desc}"
+            if c.status:
+                char_info += f" | status: {c.status}"
+            context_parts.append(char_info)
 
         for rh in search_result.runtime_history:
             context_parts.append(f"[History] Q: {rh.request} A: {rh.respond}")

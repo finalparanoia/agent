@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 from agent.common.schemas.database import (
-    World, WorldDefinition, ReactionDefinition, CharacterDefinition,
+    World, WorldDefinition, ReactionDefinition, RuntimeCharacter,
     RuntimeData, RawRequestRespondPair
 )
 
@@ -49,7 +49,7 @@ class SearchResult(BaseModel):
     world: Optional[World] = None
     world_definitions: List[WorldDefinition] = Field(default_factory=list)
     reactions: List[ReactionDefinition] = Field(default_factory=list)
-    characters: List[CharacterDefinition] = Field(default_factory=list)
+    characters: List[RuntimeCharacter] = Field(default_factory=list)
     runtime_data: Optional[RuntimeData] = None
     runtime_history: List[RawRequestRespondPair] = Field(default_factory=list)
 
