@@ -7,7 +7,7 @@ from loguru import logger
 from agent.common.config import SETTINGS
 from agent.common.repo.template_cmd import WorldTemplateCommands
 from agent.common.repo.template_query import WorldTemplateQueries
-from agent.common.schemas.database import World
+from agent.common.schemas.database import World, RuntimeCharacter
 from agent.common.schemas.dto import RuntimeDataDTO, RawRequestRespondPairDTO
 
 

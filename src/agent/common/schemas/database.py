@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Optional, List
 
+from pydantic import computed_field
 from loguru import logger
 from sqlmodel import SQLModel, Field, Text, Relationship
 from sqlmodel import create_engine, Session
@@ -18,6 +19,8 @@ class World(SQLModel, table=True):
     definition: List["WorldDefinition"] = Relationship(back_populates="world")
     reaction: List["ReactionDefinition"] = Relationship(back_populates="world")
     character: List["CharacterDefinition"] = Relationship(back_populates="world")
+
+    runtime_data: List["RuntimeData"] = Relationship(back_populates="world")
 
 
 class WorldDefinition(SQLModel, table=True):
@@ -53,6 +56,8 @@ class CharacterDefinition(SQLModel, table=True):
 
     world: World = Relationship(back_populates="character")
 
+    runtime_character: List["RuntimeCharacter"] = Relationship(back_populates="character")
+
 
 class RuntimeData(SQLModel, table=True):
     __tablename__ = "runtime_data"
@@ -60,6 +65,31 @@ class RuntimeData(SQLModel, table=True):
     id: Optional[str] = Field(primary_key=True, default_factory=generate_id)
     world_id: str = Field(foreign_key="world.id")
     label: str
+
+    world: World = Relationship(back_populates="runtime_data")
+
+
+class RuntimeCharacter(SQLModel, table=True):
+    __tablename__ = "runtime_character"
+
+    id: Optional[str] = Field(primary_key=True, default_factory=generate_id)
+    character_id: str = Field(foreign_key="character.id")
+
+    runtime_data_id: str = Field(foreign_key="runtime_data.id")
+    name: str = Field(sa_type=Text)
+    hardcopy_description: str = Field(sa_type=Text, default="")
+    description_patch: str = Field(sa_type=Text, default="")
+    status: str = Field(default="", sa_type=Text)
+
+    character: CharacterDefinition = Relationship(back_populates="runtime_character")
+
+    @computed_field
+    @property
+    def description(self):
+        if self.hardcopy_description:
+            return self.hardcopy_description
+        else:
+            return self.character.description
 
 
 class RawRequestRespondPair(SQLModel, table=True):

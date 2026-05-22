@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 
 from agent.common.schemas.database import (
     World, WorldDefinition, ReactionDefinition, CharacterDefinition,
-    RuntimeData, RawRequestRespondPair
+    RuntimeData, RawRequestRespondPair, RuntimeCharacter
 )
 from agent.common.schemas.dto import (
     WorldDefinitionDTO, ReactionDefinitionDTO, CharacterDefinitionDTO,
@@ -50,11 +50,20 @@ class WorldTemplateCommands:
         )
         self.session.add(data)
 
-    def runtime_data(self, payload: RuntimeDataDTO):
+    def runtime_data(self, payload: RuntimeDataDTO, hard_copy: bool = False):
         data = RuntimeData(
             world_id=payload.world_id,
             label=payload.label,
         )
+
+        for character_entity in data.world.character:
+            character_entity: CharacterDefinition
+            character_data = RuntimeCharacter(
+                character_id=character_entity.id,
+                name=character_entity.name,
+                hardcopy_description=character_entity.description if hard_copy else ""
+            )
+            self.session.add(character_data)
         self.session.add(data)
         return data.id
 
