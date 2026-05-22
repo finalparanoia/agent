@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 from typing import Optional, List
 
-from pydantic import computed_field
 from loguru import logger
 from sqlmodel import SQLModel, Field, Text, Relationship
 from sqlmodel import create_engine, Session
@@ -77,19 +76,19 @@ class RuntimeCharacter(SQLModel, table=True):
 
     runtime_data_id: str = Field(foreign_key="runtime_data.id")
     name: str = Field(sa_type=Text)
-    hardcopy_description: str = Field(sa_type=Text, default="")
+    description: str = Field(sa_type=Text)
     description_patch: str = Field(sa_type=Text, default="")
     status: str = Field(default="", sa_type=Text)
 
     character: CharacterDefinition = Relationship(back_populates="runtime_character")
 
-    @computed_field
-    @property
-    def description(self):
-        if self.hardcopy_description:
-            return self.hardcopy_description
-        else:
-            return self.character.description
+    # @computed_field
+    # @property
+    # def description(self):
+    #     if self.hardcopy_description:
+    #         return self.hardcopy_description
+    #     else:
+    #         return self.character.description
 
 
 class RawRequestRespondPair(SQLModel, table=True):

@@ -50,7 +50,7 @@ class WorldTemplateCommands:
         )
         self.session.add(data)
 
-    def runtime_data(self, payload: RuntimeDataDTO, hard_copy: bool = False):
+    def runtime_data(self, payload: RuntimeDataDTO):
         data = RuntimeData(
             world_id=payload.world_id,
             label=payload.label,
@@ -61,7 +61,7 @@ class WorldTemplateCommands:
             character_data = RuntimeCharacter(
                 character_id=character_entity.id,
                 name=character_entity.name,
-                hardcopy_description=character_entity.description if hard_copy else ""
+                hardcopy_description=character_entity.description
             )
             self.session.add(character_data)
         self.session.add(data)
