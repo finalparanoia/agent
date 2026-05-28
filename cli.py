@@ -2,11 +2,11 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.markdown import Markdown
-
+from typing import Tuple, List
 from agent.common.schemas.database import init_db, get_db_session
 from agent.common.repo.template_cmd import WorldTemplateCommands
 from agent.common.schemas.dto import (
-    WorldDefinitionDTO, ReactionDefinitionDTO, CharacterDefinitionDTO,
+    WorldDefinitionDTO, CharacterDefinitionDTO,
     WorldBook
 )
 from agent.common.application.runtime import RuntimeManagement
@@ -15,7 +15,7 @@ from agent.define.pos import WORLD_BOOK_DATA, ROUND
 console = Console()
 
 
-def seed_world(cmd: WorldTemplateCommands, book_data: dict) -> str:
+def seed_world(cmd: WorldTemplateCommands, book_data: dict) -> Tuple[str, List[str]]:
     console.rule("[bold cyan]Step 1: 创建世界模板数据")
 
     book = WorldBook.model_validate(book_data)
@@ -26,33 +26,24 @@ def seed_world(cmd: WorldTemplateCommands, book_data: dict) -> str:
     for d in book.definitions:
         cmd.world_define(WorldDefinitionDTO(world_id=world_id, value=d.value))
     console.print(f"  [green]✓[/] 写入 {len(book.definitions)} 条世界设定")
-
-    for r in book.reactions:
-        cmd.reaction_define(ReactionDefinitionDTO(
-            world_id=world_id,
-            name=r.name,
-            description=r.description,
-            user_reaction=r.user_reaction,
-            target_reaction=r.target_reaction,
-        ))
-    console.print(f"  [green]✓[/] 写入 {len(book.reactions)} 组反应三元组")
-
+    character_ids = []
     for c in book.characters:
-        cmd.character_define(CharacterDefinitionDTO(
+        character_id = cmd.character_define(CharacterDefinitionDTO(
             world_id=world_id,
             name=c.name,
             description=c.description,
         ))
+        character_ids.append(character_id)
     console.print(f"  [green]✓[/] 写入 {len(book.characters)} 个角色")
 
-    return world_id
+    return world_id, character_ids
 
 
-def run_roleplay(session, world_id: str):
+def run_roleplay(session, world_id: str, character_ids: List[str]):
     console.rule("[bold cyan]Step 2: 初始化运行时")
 
     rt = RuntimeManagement(session)
-    runtime_id = rt.initialize(world_id)
+    runtime_id = rt.initialize(world_id, character_ids=character_ids)
     console.print(f"  [green]✓[/] Runtime 初始化完成: {runtime_id}")
 
     console.rule("[bold cyan]Step 3: AI RolePlay")
@@ -98,9 +89,9 @@ def main():
 
     with get_db_session() as session:
         cmd = WorldTemplateCommands(session)
-        world_id = seed_world(cmd, WORLD_BOOK_DATA)
+        world_id, character_ids = seed_world(cmd, WORLD_BOOK_DATA)
         session.flush()
-        run_roleplay(session, world_id)
+        run_roleplay(session, world_id, character_ids)
 
     console.print()
     console.print("[bold green]✅ 全流程测试完成[/]")

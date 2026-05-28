@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Optional, List
 
 from agent.common.schemas.database import (
-    World, WorldDefinition, ReactionDefinition, RuntimeCharacter,
+    World, WorldDefinition, RuntimeCharacter,
     RuntimeData, RawRequestRespondPair
 )
 
@@ -11,15 +11,6 @@ class WorldDefinitionDTO(BaseModel):
     id: Optional[int] = -1
     world_id: str
     value: str
-
-
-class ReactionDefinitionDTO(BaseModel):
-    id: Optional[int] = -1
-    world_id: str
-    name: str
-    description: str = Field(default="")
-    user_reaction: str = Field(default="")
-    target_reaction: str = Field(default="")
 
 
 class CharacterDefinitionDTO(BaseModel):
@@ -32,6 +23,7 @@ class CharacterDefinitionDTO(BaseModel):
 class RuntimeDataDTO(BaseModel):
     id: Optional[str] = None
     world_id: str
+    character_ids: List[str]
     label: str
 
 
@@ -48,7 +40,6 @@ class SearchResult(BaseModel):
 
     world: Optional[World] = None
     world_definitions: List[WorldDefinition] = Field(default_factory=list)
-    reactions: List[ReactionDefinition] = Field(default_factory=list)
     characters: List[RuntimeCharacter] = Field(default_factory=list)
     runtime_data: Optional[RuntimeData] = None
     runtime_history: List[RawRequestRespondPair] = Field(default_factory=list)
@@ -58,12 +49,12 @@ class WorldBookDefinition(BaseModel):
     value: str
 
 
-class WorldBookReaction(BaseModel):
-    name: str
-    description: str = Field(default="")
-    user_reaction: str = Field(default="")
-    target_reaction: str = Field(default="")
-
+    @model_validator(mode='before')
+    @classmethod
+    def wrap_string(cls, data):
+        if isinstance(data, str):
+            return {'value': data}
+        return data
 
 class WorldBookCharacter(BaseModel):
     name: str
@@ -73,5 +64,4 @@ class WorldBookCharacter(BaseModel):
 class WorldBook(BaseModel):
     name: str
     definitions: List[WorldBookDefinition] = Field(default_factory=list)
-    reactions: List[WorldBookReaction] = Field(default_factory=list)
     characters: List[WorldBookCharacter] = Field(default_factory=list)

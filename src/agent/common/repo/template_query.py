@@ -3,7 +3,7 @@ from typing import Optional, List, Dict, Any
 from sqlmodel import Session, select, func, or_, col
 
 from agent.common.schemas.database import (
-    World, WorldDefinition, ReactionDefinition, RuntimeCharacter,
+    World, WorldDefinition, RuntimeCharacter,
     RuntimeData, RawRequestRespondPair
 )
 from agent.common.schemas.dto import SearchResult
@@ -52,14 +52,11 @@ class WorldTemplateQueries:
             select(WorldDefinition).where(WorldDefinition.world_id == world_id)
         ).all())
 
-        reactions = list(self.session.exec(
-            select(ReactionDefinition).where(ReactionDefinition.world_id == world_id)
-        ).all())
+
 
         return {
             "world": world,
             "world_definitions": world_definitions,
-            "reactions": reactions,
         }
 
     def _query_runtime_data(self, runtime_id: str) -> Dict[str, Any]:
@@ -103,9 +100,6 @@ class WorldTemplateQueries:
             world_definitions=self._bm25_filter_definitions(
                 static["world_definitions"], query, ts_query
             ),
-            reactions=self._bm25_filter_reactions(
-                static["reactions"], query, ts_query
-            ),
             characters=self._bm25_filter_characters(
                 runtime["runtime_characters"], query, ts_query
             ),
@@ -126,26 +120,6 @@ class WorldTemplateQueries:
             .where(func.to_tsvector("simple", WorldDefinition.value).op("@@")(ts_query))
         )
 
-        # noinspection PyTypeChecker
-        return list(self.session.exec(stmt).all())
-
-    def _bm25_filter_reactions(
-        self, items: List[ReactionDefinition], query: str, ts_query
-    ) -> List[ReactionDefinition]:
-        if not query or not items:
-            return items
-        combined_vector = func.to_tsvector(
-            "simple",
-            func.coalesce(ReactionDefinition.name, "")
-            + " " + func.coalesce(ReactionDefinition.description, "")
-            + " " + func.coalesce(ReactionDefinition.user_reaction, "")
-            + " " + func.coalesce(ReactionDefinition.target_reaction, ""),
-        )
-        stmt = (
-            select(ReactionDefinition)
-            .where(col(ReactionDefinition.id).in_([r.id for r in items]))
-            .where(combined_vector.op("@@")(ts_query))
-        )
         # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
 
@@ -205,9 +179,6 @@ class WorldTemplateQueries:
             world_definitions=self._relation_filter_definitions(
                 static["world_definitions"], pattern
             ),
-            reactions=self._relation_filter_reactions(
-                static["reactions"], pattern
-            ),
             characters=self._relation_filter_characters(
                 runtime["runtime_characters"], pattern
             ),
@@ -226,26 +197,6 @@ class WorldTemplateQueries:
             select(WorldDefinition)
             .where(col(WorldDefinition.id).in_([d.id for d in items]))
             .where(col(WorldDefinition.value).ilike(pattern))
-        )
-        # noinspection PyTypeChecker
-        return list(self.session.exec(stmt).all())
-
-    def _relation_filter_reactions(
-        self, items: List[ReactionDefinition], pattern: str
-    ) -> List[ReactionDefinition]:
-        if not items:
-            return items
-        stmt = (
-            select(ReactionDefinition)
-            .where(col(ReactionDefinition.id).in_([r.id for r in items]))
-            .where(
-                or_(
-                    col(ReactionDefinition.name).ilike(pattern),
-                    col(ReactionDefinition.description).ilike(pattern),
-                    col(ReactionDefinition.user_reaction).ilike(pattern),
-                    col(ReactionDefinition.target_reaction).ilike(pattern),
-                )
-            )
         )
         # noinspection PyTypeChecker
         return list(self.session.exec(stmt).all())
@@ -300,11 +251,9 @@ class WorldTemplateQueries:
         world = None
         runtime_data = None
         seen_def_ids: set = set()
-        seen_reaction_ids: set = set()
         seen_char_ids: set = set()
         seen_history_ids: set = set()
         merged_definitions: List[WorldDefinition] = []
-        merged_reactions: List[ReactionDefinition] = []
         merged_characters: List[RuntimeCharacter] = []
         merged_history: List[RawRequestRespondPair] = []
 
@@ -321,12 +270,6 @@ class WorldTemplateQueries:
                     if wd.id is not None:
                         seen_def_ids.add(wd.id)
 
-            for rx in r.reactions:
-                if rx.id is None or rx.id not in seen_reaction_ids:
-                    merged_reactions.append(rx)
-                    if rx.id is not None:
-                        seen_reaction_ids.add(rx.id)
-
             for ch in r.characters:
                 if ch.id not in seen_char_ids:
                     merged_characters.append(ch)
@@ -342,7 +285,6 @@ class WorldTemplateQueries:
         return SearchResult(
             world=world,
             world_definitions=merged_definitions,
-            reactions=merged_reactions,
             characters=merged_characters,
             runtime_data=runtime_data,
             runtime_history=merged_history,

@@ -18,7 +18,7 @@ class RuntimeManagement:
         self._query = WorldTemplateQueries(session)
         self._runtime_id: Optional[str] = None
 
-    def initialize(self, world_id: str) -> str:
+    def initialize(self, world_id: str, character_ids: List[str]) -> str:
         world = self.session.exec(
             select(World).where(World.id == world_id)
         ).first()
@@ -28,23 +28,19 @@ class RuntimeManagement:
         payload = RuntimeDataDTO(
             world_id=world_id,
             label=world.name,
+            character_ids=character_ids,
         )
         self._runtime_id = self._cmd.runtime_data(payload)
         assert self._runtime_id is not None
         return self._runtime_id
 
     @staticmethod
-    def _extract_keywords(text: str) -> List[str]:
-        keyword_prompt = (
-            "你是一个关键词提取助手。请从用户输入中提取用于检索的关键词，"
-            "返回JSON格式的字符串列表，不要输出任何其他内容。\n"
-            '示例输出：["关键词1", "关键词2", "关键词3"]'
-        )
+    def raw_completion(system: str, prompt: List[dict]) -> str:
         response = completion(
             model=SETTINGS.llm_model,
             messages=[
-                {"role": "system", "content": keyword_prompt},
-                {"role": "user", "content": text},
+                {"role": "system", "content": system},
+                *prompt
             ],
             api_key=SETTINGS.llm_api_key or None,
             api_base=SETTINGS.llm_api_base or None,
@@ -54,6 +50,23 @@ class RuntimeManagement:
         content = response.choices[0].message.content
         if content is None:
             raise RuntimeError("LLM returned empty response for keyword extraction")
+
+        return content
+
+    def _extract_keywords(self, text: str) -> List[str]:
+        keyword_prompt = (
+            "你是一个关键词提取助手。请从用户输入中提取用于检索的关键词，"
+            "返回JSON格式的字符串列表，不要输出任何其他内容。\n"
+            '示例输出：["关键词1", "关键词2", "关键词3"]'
+        )
+
+        messages=[
+            {"role": "system", "content": keyword_prompt},
+            {"role": "user", "content": text},
+        ]
+
+        content = self.raw_completion(keyword_prompt, messages)
+
         try:
             keywords = json.loads(content.strip())
             if isinstance(keywords, list) and all(isinstance(k, str) for k in keywords):
@@ -73,7 +86,6 @@ class RuntimeManagement:
 
         logger.debug(f"Extracted keywords: {keywords}, search query: {search_result}")
 
-
         context_parts = []
 
         if search_result.world:
@@ -81,12 +93,6 @@ class RuntimeManagement:
 
         for wd in search_result.world_definitions:
             context_parts.append(f"[Definition] {wd.value}")
-
-        for r in search_result.reactions:
-            context_parts.append(
-                f"[Reaction] {r.name}: {r.description} "
-                f"| user: {r.user_reaction} | target: {r.target_reaction}"
-            )
 
         for c in search_result.characters:
             char_desc = c.description
@@ -111,31 +117,17 @@ class RuntimeManagement:
         )
         logger.debug(system_prompt)
 
-        response = completion(
-            model=SETTINGS.llm_model,
-            messages=[
+        context = self.raw_completion(system_prompt, [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": request},
-            ],
-            api_key=SETTINGS.llm_api_key or None,
-            api_base=SETTINGS.llm_api_base or None,
-        )
-
-        if not isinstance(response, ModelResponse):
-            raise RuntimeError("Expected ModelResponse but got streaming response")
-
-        respond = response.choices[0].message.content
-        if respond is None:
-            raise RuntimeError("LLM returned empty response")
-
-        event_brief = respond[:200] if len(respond) > 200 else respond
+            ])
 
         pair_payload = RawRequestRespondPairDTO(
             runtime_id=self._runtime_id,
             request=request,
-            respond=respond,
-            event_brief=event_brief,
+            respond=context,
+            event_brief="",
         )
         self._cmd.pair_data(pair_payload)
 
-        return respond
+        return context

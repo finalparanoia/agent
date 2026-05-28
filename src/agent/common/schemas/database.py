@@ -16,9 +16,6 @@ class World(SQLModel, table=True):
     name: str
 
     definition: List["WorldDefinition"] = Relationship(back_populates="world")
-    reaction: List["ReactionDefinition"] = Relationship(back_populates="world")
-    character: List["CharacterDefinition"] = Relationship(back_populates="world")
-
     runtime_data: List["RuntimeData"] = Relationship(back_populates="world")
 
 
@@ -32,28 +29,12 @@ class WorldDefinition(SQLModel, table=True):
     world: World = Relationship(back_populates="definition")
 
 
-class ReactionDefinition(SQLModel, table=True):
-    __tablename__ = "reaction_definition"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    world_id: str = Field(foreign_key="world.id")
-    name: str = Field(sa_type=Text)
-    description: str = Field(default="", sa_type=Text)
-    user_reaction: str = Field(default="", sa_type=Text)
-    target_reaction: str = Field(default="", sa_type=Text)
-
-    world: World = Relationship(back_populates="reaction")
-
-
 class CharacterDefinition(SQLModel, table=True):
     __tablename__ = "character_definition"
 
     id: Optional[str] = Field(primary_key=True, default_factory=generate_id)
     name: str = Field(sa_type=Text)
     description: str = Field(sa_type=Text)
-    world_id: str = Field(foreign_key="world.id")
-
-    world: World = Relationship(back_populates="character")
 
     runtime_character: List["RuntimeCharacter"] = Relationship(back_populates="character")
 
@@ -81,14 +62,6 @@ class RuntimeCharacter(SQLModel, table=True):
     status: str = Field(default="", sa_type=Text)
 
     character: CharacterDefinition = Relationship(back_populates="runtime_character")
-
-    # @computed_field
-    # @property
-    # def description(self):
-    #     if self.hardcopy_description:
-    #         return self.hardcopy_description
-    #     else:
-    #         return self.character.description
 
 
 class RawRequestRespondPair(SQLModel, table=True):
