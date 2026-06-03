@@ -1,3 +1,4 @@
+"""LLM模型配置模块，提供OpenAI响应模型的实例化配置"""
 from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from agent.common.config import SETTINGS

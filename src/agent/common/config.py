@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    """应用程序配置类，包含数据库和LLM相关设置"""
     sql_db_url: str = "postgresql://test:test@192.168.3.184:5432/test"
     pool_size: int = 256
     max_overflow: int = 0

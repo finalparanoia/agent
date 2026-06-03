@@ -52,6 +52,7 @@ class WorldBookDefinition(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def wrap_string(cls, data):
+        """将字符串数据包装为字典格式，确保数据结构一致"""
         if isinstance(data, str):
             return {'value': data}
         return data

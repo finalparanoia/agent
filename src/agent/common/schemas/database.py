@@ -96,29 +96,23 @@ def init_db():
 
 @contextmanager
 def get_db_session():
-    try:
-        with Session(engine) as session:
-            try:
-                logger.trace("db session start!")
-                yield session
+    with Session(engine) as session:
+        try:
+            logger.trace("db session start!")
+            yield session
 
-                # with 块执行完毕后回到这里
-                logger.trace("db session end!")
+            # with 块执行完毕后回到这里
+            logger.trace("db session end!")
 
-                # 无异常,提交事务
-                session.commit()
-                logger.trace("db session commit!")
-
-            except Exception as e:      # 发生异常,回滚事务  重新抛出异常
-                logger.exception(e)
-                session.rollback()
-                raise
-            finally:        # 无论是否异常 , 都会记录
-                logger.trace("db session closed!")
-
-    except Exception as e:
-        logger.error("无法创建session")
-        logger.exception(e)
+            # 无异常,提交事务
+            session.commit()
+            logger.trace("db session commit!")
+        except Exception as e:
+            logger.exception(e)
+            session.rollback()
+            raise
+        finally:
+            logger.trace("db session closed!")
 
 
 def get_test_session():

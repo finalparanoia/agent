@@ -8,6 +8,7 @@ from agent.common.schemas.dto import RuntimeDataDTO, RawRequestRespondPairDTO, K
 
 
 class RuntimeManagement:
+    """运行时管理类"""
     def __init__(self, session: Session):
         self.session = session
         self._cmd = WorldTemplateCommands(session)
@@ -15,6 +16,7 @@ class RuntimeManagement:
         self._runtime_id: Optional[str] = None
 
     def initialize(self, world_id: str, character_ids: List[str]) -> str:
+        """初始化运行时数据"""
         world = self.session.exec(
             select(World).where(World.id == world_id)
         ).first()
@@ -31,16 +33,20 @@ class RuntimeManagement:
         return self._runtime_id
 
     def chat(self, request: str) -> str:
+        """开始会话"""
         if not self._runtime_id:
             raise RuntimeError("Runtime not initialized, call initialize() first")
 
+        # 使用关键词提取agent
         keywords_dto: KeywordsDTO = key_word_agent.run_sync(request).output
 
         keywords = keywords_dto.keywords
 
+        # 根据关键词混合检索上下文
         search_result = self._query.combined_search(self._runtime_id, keywords)
         context_parts = []
 
+        # 组装上下文
         if search_result.world:
             context_parts.append(f"[World] {search_result.world.name}")
 
@@ -61,10 +67,12 @@ class RuntimeManagement:
 
         context = "\n".join(context_parts) + f"\n用户指令：{request}"
 
+        # 调用写作agent
         respond_context = writer_agent.run_sync(context).output
 
         brief = brief_agent.run_sync(respond_context).output
 
+        # 问答对入库
         pair_payload = RawRequestRespondPairDTO(
             runtime_id=self._runtime_id,
             request=request,
