@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     pool_size: int = 256
     max_overflow: int = 0
 
-    llm_model: str = "openai/unsloth/Gemma4"
+    llm_model: str = "unsloth/Gemma4"
     llm_api_key: str = "cx"
     llm_api_base: str = "http://10.6.0.102:8000/v1"
 

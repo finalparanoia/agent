@@ -10,7 +10,7 @@ from agent.common.schemas.dto import (
     WorldBook
 )
 from agent.common.application.runtime import RuntimeManagement
-from agent.define.pos import WORLD_BOOK_DATA, ROUND
+from agent.define.sfw import WORLD_BOOK_DATA, ROUND
 
 console = Console()
 

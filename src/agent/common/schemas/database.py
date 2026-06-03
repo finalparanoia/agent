@@ -64,6 +64,14 @@ class RuntimeCharacter(SQLModel, table=True):
     character: CharacterDefinition = Relationship(back_populates="runtime_character")
 
 
+class Event(SQLModel, table=True):
+    __tablename__ = "event"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    timestamp: str
+
+
 class RawRequestRespondPair(SQLModel, table=True):
     __tablename__ = "raw_request_response_pair"
     id: Optional[int] = Field(default=None, primary_key=True)

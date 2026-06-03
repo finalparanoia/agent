@@ -65,3 +65,7 @@ class WorldBook(BaseModel):
     name: str
     definitions: List[WorldBookDefinition] = Field(default_factory=list)
     characters: List[WorldBookCharacter] = Field(default_factory=list)
+
+
+class KeywordsDTO(BaseModel):
+    keywords: List[str]
